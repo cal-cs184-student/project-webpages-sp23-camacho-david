@@ -1,7 +1,245 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 3-2 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    background-color: #242234;
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #facab8;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+  kbd {
+    color: #121212;
+  }
+</style>
+<title>CS 184 Path Tracer</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+<script id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+
+</head>
+
+
+<body>
+
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2023</h1>
+<h1 align="middle">Assignment 3-2: Additional Features to PathTracer</h1>
+<h2 align="middle">Nico and David</h2>
+
+<!-- Add Website URL -->
+<h2 align="middle">Website URL: <a href="https://cal-cs184-student.github.io/project-webpages-sp23-camacho-david/proj3-2/index.html">https://cal-cs184-student.github.io/project-webpages-sp23-camacho-david/proj3-2/index.html</a></h2>
+
+<br><br>
+
+
+
+
+<div>
+
+    <h2 align="middle">Overview</h2>
+    <p>
+        This project is a follow-up to our previous physically-based renderer with new features for reflection and reflections for mirror and glass based surfaces. The max ray depth and samples per light can be customized. Additionally, we added a new depth of field effect with the ability to alter lens radius and focal distance. Our final project demonstrates impressive reflections with an interactactable parameters to stress test the new features.
+    </p>
+    <br />
+
+    <h2 align="middle">Part 1. Mirror and Glass Materials
+    </h2>
+    <!-- Walk through the ray generation and primitive intersection parts of the rendering pipeline.
+    Explain the triangle intersection algorithm you implemented in your own words.
+    Show images with normal shading for a few small .dae files. -->
+
+    <h3>
+        Implementation Summary
+    </h3>
+    <p>
+        As mentioned, our new features are built off of our previous renderer, but that doesn't mean our old code would suffice. Before implementing reflection and refraction, we made sure to only include one bounce radiance if our current bounce radiance method if our current intersection did not have a variation in the bidirectional scattering distribution function. However, if there was a delta in the BSDF, we added the zero bounce radiance to our one bounce radiance recursion. Once these minor changes were made, the reflection method was implemented and it was nothing more than changing the signs of a couple of vectors and reassigning them. Following, the mirror material was created by creating a sampling function that did not cause any Lambertian falloff as the only thing that changed was the direction of the ray. We simply reflected our appropriate vectors and returned a 3DVector that guaranteed that the cosine from our at_least_one_bounce_radiance function would be cancelled out. For refraction, we relied on the intuition behind Snell's Law to determine relationship between the angles of incidence and refraction. A key element of the refract method involves setting our eta, old index of refraction / new index of refraction, to its entering or exiting version which is 1/ior or ior respectively. However, if our w_o started out inside our outside the object with ior > 0, z would be negative meaning our Snell Equation would be multiplied by -1 and thus our z coordinate for the incoming ray, w_i, would be negative. Despite this implementation, glare was not present as we were only refracting. The solution was to implement our mirror material that relied on Schlick's approximation to approximate the Fresnel Factor for specular reflections between two objects. The glass sampling calculated our eta as before and depending on if there was internal reflection would utilize Schlick's approximation. A coin flip on the reflection_coefficient from Schlick's equation determined whether to reflect or refract and that determined our probability distribution function and returned 3DVector finalizing our mirror and glass implementation.
+    </p>
+    <p><b>
+        Show a sequence of six images of scene `CBspheres.dae` rendered with `max_ray_depth` set to 0, 1, 2, 3, 4, 5, and 100. The other settings should be at least 64 samples per pixel and 4 samples per light. Make sure to include all screenshots.
+
+        <br>
+        <br>
+        The following images are rendered with the displayed ray depth at  64 samples per pixel and 4 samples per light:
+    </b></p>
+    <p>
+        <div align="middle">
+            <table style="width:100%">
+                <tr align="center">
+                    <td>
+                        <img src="images/sphere_0.png" align="middle" width="400px" />
+                        <figcaption>max_ray_depth = 0 </figcaption>
+                    </td>
+                    <td>
+                        <img src="images/sphere_1.png" align="middle" width="400px" />
+                        <figcaption>max_ray_depth = 1</figcaption>
+                    </td>
+                </tr>
+                <tr align="center">
+                    <td>
+                        <img src="images/sphere_2.png" align="middle" width="400px" />
+                        <figcaption>max_ray_depth = 2</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/sphere_3.png" align="middle" width="400px" />
+                        <figcaption>max_ray_depth = 3</figcaption>
+                    </td>
+                </tr>
+                <tr align="center">
+                    <td>
+                        <img src="images/sphere_4.png" align="middle" width="400px" />
+                        <figcaption>max_ray_depth = 4</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/sphere_5.png" align="middle" width="400px" />
+                        <figcaption>max_ray_depth = 5 </figcaption>
+                    </td>
+                </tr>
+                <tr align="center">
+                    <td>
+                        <img src="images/sphere_100.png" align="middle" width="400px" />
+                        <figcaption>max_ray_depth = 100</figcaption>
+                    </td>
+               
+                </tr>
+            </table>
+        </div>
+    </p>
+    <br>
+    <p><b>
+        Point out the new multibounce effects that appear in each image. 
+    </b></p>
+    <p>
+        With zero ray depth, it is clear that just the light source will be visible. With a max ray depth of one, our spheres only
+        bounce the light source back without any sort of reflection or refraction. Upon increasing the max-ray depth, notice how the
+        reflection spehere begins showing a reflection of the environment with the rightmost sphere refracting some of it.
+        At depth of 3, the reflection and refraction are now at an acceptable result as the surrounding environment is properly
+        bouncing off of the spheres, but the reflection spehere is bouncing off the incorrect version of refraction sphere
+        due to the insufficient ray depth. This is somewhat improved at a depth of 4, but a depth of 5 demonstrates the 
+        best lighting for this scene as all refractions and reflections are rendered accurately with lights bouncing at 
+        deeper levels being displayed in the environment as seen by the small light spot on the right side of the refraction spehere.
+        Of note is that a ray depth of 100 will not alter the scene (if at all) as there are no further lights to bounce off of.
+    </p>
+    <br>
+    <p><b>
+        Explain how these bounce numbers relate to the particular effects that appear. Make sure to include all screenshots.
+    </b></p>
+    <p>
+        The lighting bouncing between reflective surfaces is demonstrated with the increase in max ray depth. Of course, the depth of 0
+        results in just the light source being demonstrated and as the depth increased, so did the accuracy of the reflections. At a depth of
+        1, there were no bounced lights back to the sphere, only the initial light interaction was shown. But, as the depth increased to 
+        a depth grater than 3, we can see that the bounced lights accurately reflected the refracted sphere as the lighting scattered (bounced)
+        in between interactions from the walls to the spheres. Additional changes to the shadows were also improved with ray depth as bounces increased.
+        As more lights bounced, we saw additional minor reflections such as that found below the glass sphere and the wall on the right
+        for they implemented more of the rays into the environment.
+    </p>
+    <br>
+    <h3 align="middle">Part 4. Depth of Field</h3>
+    <p><b>
+        Implementation Summary
+    </b></p>
+    <p>
+        In order to implement the depth of field effect, we made sure to generate two random values in the range of O to 2pi 
+        to use as our rndR and rndTheta to uniformly sample our thin lens. Our new function begins by calculating the generated
+        ray direction. Our goal is to implement depth of field through the use of our fine lense with a certain radius as opposed 
+        to our previous pin-hole camera implementation that are ideal for the sake of keeping everything in focus. We calculated
+        a 3D vector that gave us the vector for the centre to the focial point by using our bottom left and top right 3DVectors from
+        our previous ray generation implementation. It was used to create our center of lens ray to uniformly sample
+        our disk that represented our new lens and calculate our pLens. By intersecting our focus plane and Z element of the 
+        center to focus ray, we calculated the pFocus to make a 3DVector for lens to our point of focus.This was followed by 
+        standard normalization and a camera to world conversion with a vector multiplication. Finally we set the lens 
+        ray with the worldPlens parameters and the appropriate instance variables replicate the depth of field effect with the 
+        results seen below. 
+    </p>
+    <b>
+        For these subparts, we recommend using a microfacet BSDF scene to show off the cool out of focus effects you can get with depth of field!
+    </b>
+    <p><b>
+        In a few sentences, explain the differences between a pinhole camera model and a thin-lens camera model. 
+    </b></p>
+    <p>
+        A pin-hole camera will maintain everything in focus as radiance is received just from the center of lens (0, 0, 0) relative
+        to our code. A thin-lens camera will replicate the human eye more accurately for radiance can be received from any point
+        on the thin lens. Depending on the lens radius and focal distance, the model will remain in focus.
+    </p>
+    <br>
+    <p><b>
+        Show a "focus stack" where you focus at 4 visibly different depths through a scene. Make sure to include all screenshots.
+    </b></p>
+    <p>
+        <div align="middle">
+            <table style="width:100%">
+                <tr align="center">
+                    <td>
+                        <img src="images/dragon_depth_1-5.png" align="middle" width="400px" />
+                        <figcaption> focal distance = 1.5 </figcaption>
+                    </td>
+                    <td>
+                        <img src="images/dragon_depth_3.png" align="middle" width="400px" />
+                        <figcaption> focal distance = 3.0 </figcaption>
+                    </td>
+                </tr>
+                <tr align="center">
+                    <td>
+                        <img src="images/dragon_depth_4-5.png" align="middle" width="400px" />
+                        <figcaption> focal distance = 4.5 </figcaption>
+                    </td>
+                    <td>
+                        <img src="images/dragon_depth_6.png" align="middle" width="400px" />
+                        <figcaption> focal distance = 6.0 </figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </p>
+    <br>
+    <p><b>
+        Show a sequence of 4 pictures with visibly different aperture sizes, all focused at the same point in a scene. Make sure to include all screenshots.
+    </b></p>
+    <p>
+        <div align="middle">
+            <table style="width:100%">
+                <tr align="center">
+                    <td>
+                        <img src="images/dragon_ap_125.png" align="middle" width="400px" />
+                        <figcaption> lens radius = 0.125 </figcaption>
+                    </td>
+                    <td>
+                        <img src="images/dragon_ap_250.png" align="middle" width="400px" />
+                        <figcaption> lens radius = 0.250 </figcaption>
+                    </td>
+                </tr>
+                <tr align="center">
+                    <td>
+                        <img src="images/dragon_ap_375.png" align="middle" width="400px" />
+                        <figcaption> lens radius = 0.375 </figcaption>
+                    </td>
+                    <td>
+                        <img src="images/dragon_ap_500.png" align="middle" width="400px" />
+                        <figcaption> lens radius = 0.500 </figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </p>
+    <br>
+
+</div>
+</body>
 </html>
